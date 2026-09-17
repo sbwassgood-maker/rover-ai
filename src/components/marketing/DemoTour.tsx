@@ -47,9 +47,12 @@ export function DemoTour({
   const [playing, setPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [finished, setFinished] = useState(false);
+  const [speed, setSpeed] = useState(1);
   const raf = useRef<number | null>(null);
   const startedAt = useRef<number>(0);
   const elapsedBefore = useRef<number>(0);
+  const speedRef = useRef(1);
+  const speeds = [1, 1.5, 2];
 
   const hasRealVideo = Boolean(videoSrc || embedUrl);
   const total = useMemo(() => scenes.reduce((s, x) => s + x.duration, 0), []);
@@ -62,6 +65,8 @@ export function DemoTour({
       setProgress(0);
       setFinished(false);
       elapsedBefore.current = 0;
+      setSpeed(1);
+      speedRef.current = 1;
     }
   }, [open]);
 
@@ -78,11 +83,15 @@ export function DemoTour({
       return;
     }
 
-    startedAt.current = performance.now();
     const dur = scenes[scene].duration;
+    let last = performance.now();
 
     const tick = (now: number) => {
-      const elapsed = now - startedAt.current + elapsedBefore.current;
+      // Accumulate speed-scaled elapsed time so playback-speed changes take
+      // effect immediately without restarting the scene.
+      elapsedBefore.current += (now - last) * speedRef.current;
+      last = now;
+      const elapsed = elapsedBefore.current;
       setProgress(Math.min(elapsed / dur, 1));
       if (elapsed >= dur) {
         elapsedBefore.current = 0;
@@ -99,8 +108,6 @@ export function DemoTour({
     raf.current = requestAnimationFrame(tick);
     return () => {
       if (raf.current) cancelAnimationFrame(raf.current);
-      // Preserve elapsed when pausing mid-scene
-      elapsedBefore.current += performance.now() - startedAt.current;
     };
   }, [open, playing, scene, finished, hasRealVideo]);
 
@@ -131,6 +138,12 @@ export function DemoTour({
   };
 
   const restart = () => goTo(0);
+
+  const cycleSpeed = () => {
+    const nextVal = speeds[(speeds.indexOf(speed) + 1) % speeds.length];
+    speedRef.current = nextVal;
+    setSpeed(nextVal);
+  };
 
   if (!open) return null;
 
@@ -243,6 +256,15 @@ export function DemoTour({
               <span className="hidden shrink-0 text-[12px] text-white/50 sm:block">
                 {scene + 1} / {scenes.length}
               </span>
+
+              <button
+                onClick={cycleSpeed}
+                className="shrink-0 rounded-md border border-white/15 px-2 py-1 text-[12px] font-semibold tabular-nums text-white/80 transition-colors hover:bg-white/10 hover:text-white"
+                aria-label={`Playback speed ${speed}x`}
+                title="Playback speed"
+              >
+                {speed % 1 === 0 ? speed : speed.toFixed(1)}×
+              </button>
             </div>
           )}
         </div>
