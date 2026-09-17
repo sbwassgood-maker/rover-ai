@@ -78,6 +78,27 @@ export function seedState(): RoverState {
     updatedAt: ts,
   }));
 
+  // Seed Decision Memory from meeting decisions so the graph & Decisions page
+  // have real content from day one.
+  const decisions = meetings.flatMap((m) =>
+    m.decisions.slice(0, 2).map((d, i) => ({
+      id: `dec_seed_${m.id}_${i}`,
+      workspaceId: WS,
+      decision: d,
+      rationale: `Agreed during ${m.title} on ${m.date}.`,
+      people: m.participants,
+      alternatives: [],
+      affects: [] as { type: string; id: string; label: string }[],
+      evidenceIds: [] as string[],
+      status: "active" as const,
+      source: `Meeting: ${m.title}`,
+      sourceId: m.id,
+      date: m.date,
+      createdAt: ts,
+      updatedAt: ts,
+    }))
+  );
+
   return {
     workspace: { id: WS, name: "Northstar", createdAt: ts },
     members,
@@ -103,5 +124,7 @@ export function seedState(): RoverState {
         at: ts,
       },
     ],
+    decisions,
+    sandbox: [],
   };
 }

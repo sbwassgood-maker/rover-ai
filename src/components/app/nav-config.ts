@@ -10,6 +10,10 @@ import {
   Table2,
   CalendarDays,
   Zap,
+  Share2,
+  GitBranch,
+  ShieldCheck,
+  ScrollText,
   type LucideIcon,
 } from "lucide-react";
 
@@ -21,7 +25,15 @@ export const primaryNav: NavItem[] = [
   { label: "Ask Rover", href: "/app/ask", icon: Sparkles, ai: true },
   { label: "Search", href: "/app/search", icon: Search },
   { label: "Agents", href: "/app/agents", icon: Bot },
+  { label: "Approvals", href: "/app/approvals", icon: ShieldCheck },
   { label: "Inbox", href: "/app/inbox", icon: Inbox },
+];
+
+// Rover intelligence & governance surfaces
+export const roverNav: NavItem[] = [
+  { label: "Work Graph", href: "/app/graph", icon: Share2 },
+  { label: "Decisions", href: "/app/decisions", icon: GitBranch },
+  { label: "Audit log", href: "/app/audit", icon: ScrollText },
 ];
 
 export const workspaceNav: NavItem[] = [

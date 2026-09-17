@@ -19,6 +19,8 @@ export interface CreateMissionInput {
   rawGoal: string;
   priority?: Priority;
   deadline?: string;
+  /** stage mutating work to the sandbox for review before applying */
+  sandbox?: boolean;
 }
 
 export class Orchestrator {
@@ -58,6 +60,7 @@ export class Orchestrator {
       currentPhase: "Planning",
       risks: plan.risks.map((r) => ({ id: uid("risk"), label: r.label, level: r.level })),
       runIds: [],
+      sandboxMode: input.sandbox ?? false,
       createdAt: nowISO(),
       updatedAt: nowISO(),
     };
@@ -100,6 +103,7 @@ export class Orchestrator {
       const run = this.runtime.createRun({
         agent, goal: planned.goal, intent: this.getMission(missionId)!.intent,
         missionId, steps: planned.steps, artifact: planned.artifact,
+        sandbox: this.getMission(missionId)!.sandboxMode,
       });
       runIds.push(run.id);
       const res = this.runtime.execute(run.id);
@@ -116,6 +120,18 @@ export class Orchestrator {
 
     if (anyApproval) {
       this.patch(missionId, { status: "WAITING_APPROVAL", currentPhase: "Waiting for approval" });
+      return { needsApproval: true, mission: this.getMission(missionId)! };
+    }
+
+    // Sandbox mode: mutating work was staged, not applied. Pause for review
+    // rather than finalizing — verification runs once changes are applied.
+    const stagedCount = this.store.getState().sandbox.filter((c) => c.missionId === missionId && c.status === "staged").length;
+    if (stagedCount > 0) {
+      this.patch(missionId, {
+        status: "WAITING_APPROVAL",
+        currentPhase: `Sandbox review — ${stagedCount} change${stagedCount !== 1 ? "s" : ""} staged`,
+      });
+      this.activity(`Staged ${stagedCount} change(s) in the sandbox for your review`, missionId);
       return { needsApproval: true, mission: this.getMission(missionId)! };
     }
 
@@ -164,7 +180,45 @@ export class Orchestrator {
     if (passed) this.advanceStep(missionId, -1, "Monitoring");
     this.activity(passed ? "Mission verified and now monitoring" : "Mission needs revision", missionId);
 
+    // Record a Decision in memory when the mission's approach is confirmed.
+    if (passed) this.recordMissionDecision(missionId);
+
     return { needsApproval: false, mission: this.getMission(missionId)! };
+  }
+
+  /** Capture the mission's approach as a persistent Decision with evidence. */
+  private recordMissionDecision(missionId: ID) {
+    const m = this.getMission(missionId);
+    if (!m) return;
+    const runs = this.store.getState().runs.filter((r) => r.missionId === missionId);
+    const runIds = new Set(runs.map((r) => r.id));
+    const evidenceIds = this.store.getState().evidence
+      .filter((e) => this.store.getState().toolCalls.some((c) => runIds.has(c.runId) && c.evidenceIds.includes(e.id)))
+      .slice(0, 5)
+      .map((e) => e.id);
+    const affects = this.store.getState().tasks
+      .filter((t) => t.missionId === missionId)
+      .slice(0, 5)
+      .map((t) => ({ type: "task", id: t.id, label: t.title }));
+
+    const decision = {
+      id: uid("dec"),
+      workspaceId: m.workspaceId,
+      decision: `Proceed with: ${m.goal}`,
+      rationale: m.intent.objectives.slice(0, 3).join("; ") || "Verified against success criteria.",
+      people: [m.owner],
+      alternatives: ["Do nothing", "Defer to next cycle"],
+      affects,
+      evidenceIds,
+      status: "active" as const,
+      source: `Mission: ${m.name}`,
+      sourceId: m.id,
+      date: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric" }),
+      createdAt: nowISO(),
+      updatedAt: nowISO(),
+    };
+    this.store.setState((prev) => ({ ...prev, decisions: [decision, ...prev.decisions] }));
+    this.activity(`Recorded decision: ${decision.decision}`, missionId);
   }
 
   /** Reverse every reversible tool call made by a run. */

@@ -139,6 +139,8 @@ export interface Mission extends Entity {
   risks: MissionRisk[];
   runIds: ID[];
   outcome?: string;
+  /** when true, mutating agent work is staged to the sandbox for review */
+  sandboxMode: boolean;
 }
 
 /* ------------------------------------------------------------------ */
@@ -299,6 +301,50 @@ export interface Activity {
 }
 
 /* ------------------------------------------------------------------ */
+/* Decision Memory                                                     */
+/* ------------------------------------------------------------------ */
+
+export type DecisionStatus = "active" | "superseded" | "revisiting";
+
+export interface Decision extends Entity {
+  decision: string;
+  rationale: string;
+  people: string[];
+  alternatives: string[];
+  /** entity refs affected by this decision */
+  affects: { type: string; id: ID; label: string }[];
+  evidenceIds: ID[];
+  status: DecisionStatus;
+  source: string; // e.g. "Meeting: Product Strategy" | "Mission: Launch"
+  sourceId?: ID;
+  date: string;
+}
+
+/* ------------------------------------------------------------------ */
+/* Sandbox — staged, reviewable changes before they touch the store    */
+/* ------------------------------------------------------------------ */
+
+export type SandboxOpKind = "create" | "update" | "delete";
+export type SandboxStatus = "staged" | "applied" | "rejected";
+
+export interface SandboxChange {
+  id: ID;
+  workspaceId: ID;
+  runId: ID;
+  agentName: string;
+  missionId?: ID;
+  op: SandboxOpKind;
+  collection: CollectionName;
+  /** the entity to create / the patch to apply / the id to delete */
+  payload: Record<string, unknown>;
+  entityId: ID;
+  label: string;
+  risk: ToolRisk;
+  status: SandboxStatus;
+  at: ISODate;
+}
+
+/* ------------------------------------------------------------------ */
 /* Store shape                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -319,6 +365,8 @@ export interface RoverState {
   approvals: Approval[];
   verifications: VerificationReport[];
   activity: Activity[];
+  decisions: Decision[];
+  sandbox: SandboxChange[];
 }
 
 export type CollectionName = keyof Omit<RoverState, "workspace">;

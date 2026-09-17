@@ -58,5 +58,28 @@ if (runWithDocs) {
   assert(now < before, "documents removed after undo");
 }
 
+// 5. Decision Memory: a successful mission records a decision
+assert(store.getState().decisions.some((d) => d.sourceId === mission.id), "recorded a mission decision");
+
+// 6. Work Graph: build + query
+import { buildGraph, traceDependency, findImpact } from "../.slice/rover/graph.js";
+const g = buildGraph(store.getState());
+assert(g.nodes.length > 0 && g.edges.length > 0, `work graph built (${g.nodes.length} nodes, ${g.edges.length} edges)`);
+
+// 7. Sandbox mode: a sandbox mission stages changes instead of applying
+const docsPre = store.getState().docs.length;
+const sbxMission = orch.createMission({ rawGoal: "Launch a new product", sandbox: true });
+orch.runMission(sbxMission.id);
+const staged = store.getState().sandbox.filter((c) => c.status === "staged");
+assert(staged.length > 0, `sandbox staged ${staged.length} change(s)`);
+assert(store.getState().docs.length === docsPre, "sandbox did NOT touch live docs before apply");
+const sbxM = store.getState().missions.find((x) => x.id === sbxMission.id);
+assert(sbxM.status === "WAITING_APPROVAL", "sandbox mission pauses for review");
+
+// apply the staged changes
+import { applyAll } from "../.slice/rover/sandbox.js";
+const applied = applyAll(store, sbxMission.id);
+assert(applied > 0 && store.getState().docs.length > docsPre, `applying sandbox committed ${applied} change(s)`);
+
 console.log("\nMission outcome:", m2.outcome);
-console.log(process.exitCode ? "\nSLICE TEST FAILED" : "\n✅ VERTICAL SLICE WORKS END-TO-END");
+console.log(process.exitCode ? "\nSLICE TEST FAILED" : "\n✅ PHASES 4 & 5 VERIFIED END-TO-END");

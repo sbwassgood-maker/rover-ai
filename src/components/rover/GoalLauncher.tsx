@@ -24,13 +24,14 @@ export function GoalLauncher({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
   const [goal, setGoal] = useState("");
   const [busy, setBusy] = useState(false);
+  const [sandbox, setSandbox] = useState(false);
 
   const launch = (raw: string) => {
     const g = raw.trim();
     if (!g || busy) return;
     setBusy(true);
     const orch = getOrchestrator();
-    const mission = orch.createMission({ rawGoal: g });
+    const mission = orch.createMission({ rawGoal: g, sandbox });
     // Let the "Planning" state render, then execute the loop.
     setTimeout(() => {
       orch.runMission(mission.id);
@@ -54,17 +55,32 @@ export function GoalLauncher({ compact = false }: { compact?: boolean }) {
           className="max-h-40 flex-1 resize-none bg-transparent py-2 text-[15px] text-ink outline-none placeholder:text-muted/70"
           disabled={busy}
         />
-        <button
-          type="submit"
-          disabled={!goal.trim() || busy}
-          className={cn(
-            "flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[14px] font-medium transition-colors",
-            goal.trim() && !busy ? "bg-accent text-white hover:bg-accent-hover" : "bg-ink/[0.06] text-muted"
-          )}
-        >
-          {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Starting</> : <>Start mission <ArrowUp className="h-4 w-4" /></>}
-        </button>
+        <div className="flex flex-col items-end gap-1.5">
+          <button
+            type="submit"
+            disabled={!goal.trim() || busy}
+            className={cn(
+              "flex h-10 shrink-0 items-center gap-1.5 rounded-xl px-3.5 text-[14px] font-medium transition-colors",
+              goal.trim() && !busy ? "bg-accent text-white hover:bg-accent-hover" : "bg-ink/[0.06] text-muted"
+            )}
+          >
+            {busy ? <><Loader2 className="h-4 w-4 animate-spin" /> Starting</> : <>Start mission <ArrowUp className="h-4 w-4" /></>}
+          </button>
+        </div>
       </form>
+
+      {/* Sandbox toggle — stage changes for review before applying */}
+      <label className="mt-2 flex items-center justify-end gap-2 pr-1 text-[12.5px] text-muted">
+        <button
+          type="button"
+          onClick={() => setSandbox((v) => !v)}
+          className={cn("relative h-4 w-7 rounded-full transition-colors", sandbox ? "bg-accent" : "bg-ink/15")}
+          aria-label="Toggle sandbox mode"
+        >
+          <span className={cn("absolute top-0.5 h-3 w-3 rounded-full bg-white transition-all", sandbox ? "left-[14px]" : "left-0.5")} />
+        </button>
+        Sandbox mode {sandbox ? "on — changes staged for review" : "off — changes applied directly"}
+      </label>
 
       {!compact && (
         <div className="mt-4 flex flex-wrap items-center justify-center gap-2">

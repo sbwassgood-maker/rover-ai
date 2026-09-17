@@ -25,6 +25,8 @@ export interface AgentRunInput {
   /** ordered tool plan: tool name + args */
   steps: { tool: string; args: Record<string, unknown>; note?: string }[];
   artifact?: { kind: ArtifactKind; title: string; content: string };
+  /** when true, mutating tools stage to the sandbox instead of applying */
+  sandbox?: boolean;
 }
 
 export interface AgentRunResult {
@@ -74,7 +76,7 @@ export class LocalAgentRuntime implements AgentRuntime {
     }
 
     this.patchRun(runId, { status: "executing" });
-    const ctx: ToolContext = { store: this.store, workspaceId, runId, actor: input.agent.name };
+    const ctx: ToolContext = { store: this.store, workspaceId, runId, actor: input.agent.name, sandbox: input.sandbox, missionId: input.missionId };
 
     const collectedEvidence: Evidence[] = [];
     const toolCalls: AgentToolCall[] = [];
@@ -181,7 +183,7 @@ export class LocalAgentRuntime implements AgentRuntime {
 
   private executeApproved(runId: ID, input: AgentRunInput): AgentRunResult {
     const workspaceId = this.store.getState().workspace.id;
-    const ctx: ToolContext = { store: this.store, workspaceId, runId, actor: input.agent.name };
+    const ctx: ToolContext = { store: this.store, workspaceId, runId, actor: input.agent.name, sandbox: input.sandbox, missionId: input.missionId };
     const collectedEvidence: Evidence[] = [];
     const toolCalls: AgentToolCall[] = this.store.getState().toolCalls.filter((c) => c.runId === runId);
 

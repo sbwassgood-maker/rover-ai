@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/Button";
 import { useToast } from "@/components/ui/Toast";
 import { MissionStatusBadge, RiskBadge } from "@/components/rover/status";
 import { RunReceipt } from "@/components/rover/RunReceipt";
+import { EvidenceWhy } from "@/components/rover/EvidenceWhy";
+import { SandboxDiff, SandboxBanner } from "@/components/rover/SandboxDiff";
+import { FlaskConical } from "lucide-react";
 import { useRoverState } from "@/rover/useRover";
 import { getStore } from "@/rover/store";
 import { getOrchestrator } from "@/rover/orchestrator";
@@ -34,6 +37,8 @@ export default function MissionDetail() {
   const missionDocs = s.docs.filter((d) => d.createdByRun && runIds.has(d.createdByRun));
   const evidence = s.evidence.filter((e) => s.toolCalls.some((c) => runIds.has(c.runId) && c.evidenceIds.includes(e.id)));
   const activity = s.activity.filter((a) => a.missionId === id);
+  const sandboxChanges = s.sandbox.filter((c) => c.missionId === id);
+  const stagedCount = sandboxChanges.filter((c) => c.status === "staged").length;
 
   if (!mission) {
     return (
@@ -79,6 +84,7 @@ export default function MissionDetail() {
               <h1 className="text-xl font-semibold tracking-tight text-ink">{mission.name}</h1>
               <MissionStatusBadge status={mission.status} />
               {mission.riskLevel !== "low" && <RiskBadge level={mission.riskLevel} />}
+              {mission.sandboxMode && <SandboxBanner />}
             </div>
             <p className="mt-1 text-[13.5px] text-muted">Original intent: &ldquo;{mission.originalIntent}&rdquo;</p>
           </div>
@@ -122,6 +128,15 @@ export default function MissionDetail() {
                   </div>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Sandbox review */}
+          {sandboxChanges.length > 0 && (
+            <section className={cn("rounded-2xl border p-5", stagedCount > 0 ? "border-accent/30 bg-accent/[0.04]" : "border-line bg-surface shadow-card")}>
+              <h2 className="mb-3 flex items-center gap-2 text-[14px] font-semibold text-ink"><FlaskConical className="h-4 w-4 text-accent" /> Sandbox {stagedCount > 0 && `— ${stagedCount} change${stagedCount !== 1 ? "s" : ""} to review`}</h2>
+              <p className="mb-3 text-[12.5px] text-muted">These changes have not touched your live workspace. Review and apply what you want.</p>
+              <SandboxDiff changes={sandboxChanges} missionId={id} />
             </section>
           )}
 
@@ -215,10 +230,13 @@ export default function MissionDetail() {
           {/* Outcome */}
           {mission.outcome && (
             <section className={cn("rounded-2xl border p-5", mission.status === "MONITORING" || mission.status === "COMPLETED" ? "border-success/30 bg-success/[0.05]" : "border-warning/30 bg-warning/[0.05]")}>
-              <h2 className="flex items-center gap-2 text-[14px] font-semibold text-ink">
-                {mission.status === "MONITORING" || mission.status === "COMPLETED" ? <CheckCircle2 className="h-4 w-4 text-success" /> : <XCircle className="h-4 w-4 text-[#8a6600]" />}
-                Outcome
-              </h2>
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="flex items-center gap-2 text-[14px] font-semibold text-ink">
+                  {mission.status === "MONITORING" || mission.status === "COMPLETED" ? <CheckCircle2 className="h-4 w-4 text-success" /> : <XCircle className="h-4 w-4 text-[#8a6600]" />}
+                  Outcome
+                </h2>
+                <EvidenceWhy claim={mission.outcome} evidence={evidence.slice(0, 5)} label="Proof" />
+              </div>
               <p className="mt-2 text-[13.5px] leading-relaxed text-ink/85">{mission.outcome}</p>
             </section>
           )}

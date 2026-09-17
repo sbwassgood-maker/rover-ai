@@ -11,6 +11,7 @@ import type {
 } from "./types";
 import { RoverStore } from "./store";
 import { uid, nowISO } from "./id";
+import { buildGraph, traceDependency, findImpact } from "./graph";
 
 export interface ToolContext {
   store: RoverStore;
@@ -18,6 +19,9 @@ export interface ToolContext {
   runId: string;
   /** who is calling — used for activity attribution */
   actor: string;
+  /** when true, mutating tools stage a SandboxChange instead of applying */
+  sandbox?: boolean;
+  missionId?: string;
 }
 
 export interface ToolResult {
@@ -46,16 +50,43 @@ function str(args: Record<string, unknown>, key: string, fallback = ""): string 
   return typeof v === "string" ? v : fallback;
 }
 
+/**
+ * Create an entity. In sandbox mode the create is STAGED as a SandboxChange
+ * (nothing touches the live collection until the user applies it). In direct
+ * mode it applies immediately and returns an undo op.
+ * Returns { staged } so the tool can report accurately.
+ */
 function push<T extends { id: string }>(
   ctx: ToolContext,
   collection: CollectionName,
-  item: T
-): UndoOp {
+  item: T,
+  label: string,
+  risk: ToolRisk
+): { undo?: UndoOp; staged: boolean } {
+  if (ctx.sandbox) {
+    const change = {
+      id: uid("sbx"),
+      workspaceId: ctx.workspaceId,
+      runId: ctx.runId,
+      agentName: ctx.actor,
+      missionId: ctx.missionId,
+      op: "create" as const,
+      collection,
+      payload: item as unknown as Record<string, unknown>,
+      entityId: item.id,
+      label,
+      risk,
+      status: "staged" as const,
+      at: nowISO(),
+    };
+    ctx.store.setState((prev) => ({ ...prev, sandbox: [change, ...prev.sandbox] }));
+    return { staged: true };
+  }
   ctx.store.setState((prev) => ({
     ...prev,
     [collection]: [item, ...(prev[collection] as unknown as T[])],
   }) as RoverState);
-  return { kind: "delete", collection, id: item.id };
+  return { undo: { kind: "delete", collection, id: item.id }, staged: false };
 }
 
 /* --------------------------- tools ----------------------------- */
@@ -171,18 +202,18 @@ const createDocument: ToolDef = {
     const body = str(args, "body");
     const id = uid("doc");
     const ts = nowISO();
-    const undo = push(ctx, "docs", {
+    const { undo, staged } = push(ctx, "docs", {
       id, workspaceId: ctx.workspaceId, title,
       excerpt: body.slice(0, 140) || "Created by Rover.",
       body, emoji: "✦", author: ctx.actor, team: "Product",
       createdByRun: ctx.runId, createdAt: ts, updatedAt: ts,
-    });
+    }, `Document: ${title}`, "MEDIUM");
     return {
       ok: true,
-      summary: `Created document "${title}".`,
-      data: { id, title },
-      undo: [undo],
-      createdRefs: [{ collection: "docs", id }],
+      summary: staged ? `Staged document "${title}" for review.` : `Created document "${title}".`,
+      data: { id, title, staged },
+      undo: undo ? [undo] : undefined,
+      createdRefs: staged ? undefined : [{ collection: "docs", id }],
       evidence: [ev("document", id, title, "Created by Rover", "supports", 1)],
     };
   },
@@ -197,14 +228,15 @@ const createProject: ToolDef = {
     const name = str(args, "name", "New project");
     const id = uid("proj");
     const ts = nowISO();
-    const undo = push(ctx, "projects", {
+    const { undo, staged } = push(ctx, "projects", {
       id, workspaceId: ctx.workspaceId, name, status: "active" as const,
       owner: ctx.actor, priority: "medium" as const, due: "—",
       insight: "New", insightTone: "success" as const, createdAt: ts, updatedAt: ts,
-    });
+    }, `Project: ${name}`, "MEDIUM");
     return {
-      ok: true, summary: `Created project "${name}".`, data: { id, name },
-      undo: [undo], createdRefs: [{ collection: "projects", id }],
+      ok: true, summary: staged ? `Staged project "${name}" for review.` : `Created project "${name}".`,
+      data: { id, name, staged },
+      undo: undo ? [undo] : undefined, createdRefs: staged ? undefined : [{ collection: "projects", id }],
     };
   },
 };
@@ -218,17 +250,18 @@ const createTask: ToolDef = {
     const title = str(args, "title", "New task");
     const id = uid("task");
     const ts = nowISO();
-    const undo = push(ctx, "tasks", {
+    const { undo, staged } = push(ctx, "tasks", {
       id, workspaceId: ctx.workspaceId, title,
       projectId: str(args, "projectId") || undefined,
       missionId: str(args, "missionId") || undefined,
       status: "backlog" as const, assignee: str(args, "assignee", ctx.actor),
       priority: (str(args, "priority", "medium") as "high" | "medium" | "low"),
       due: str(args, "due", "—"), createdByRun: ctx.runId, createdAt: ts, updatedAt: ts,
-    });
+    }, `Task: ${title}`, "MEDIUM");
     return {
-      ok: true, summary: `Created task "${title}".`, data: { id, title },
-      undo: [undo], createdRefs: [{ collection: "tasks", id }],
+      ok: true, summary: staged ? `Staged task "${title}" for review.` : `Created task "${title}".`,
+      data: { id, title, staged },
+      undo: undo ? [undo] : undefined, createdRefs: staged ? undefined : [{ collection: "tasks", id }],
     };
   },
 };
@@ -273,6 +306,47 @@ const completeMissionStep: ToolDef = {
   },
 };
 
+const traceDependencyTool: ToolDef = {
+  name: "traceDependency",
+  description: "Trace what a project or task depends on via the work graph.",
+  risk: "LOW",
+  mutates: false,
+  run: (args, ctx) => {
+    const term = str(args, "term").toLowerCase();
+    const s = ctx.store.getState();
+    const g = buildGraph(s);
+    const node = g.nodes.find((n) => n.label.toLowerCase().includes(term));
+    if (!node) return { ok: true, summary: `No graph node matched "${term}".`, data: [] };
+    const deps = traceDependency(g, node.id);
+    return {
+      ok: true,
+      summary: `${node.label} depends on ${deps.length} item(s).`,
+      data: deps.map((d) => ({ type: d.kind, label: d.label })),
+    };
+  },
+};
+
+const findImpactTool: ToolDef = {
+  name: "findImpact",
+  description: "Find what would be impacted by a change to an entity.",
+  risk: "LOW",
+  mutates: false,
+  run: (args, ctx) => {
+    const term = str(args, "term").toLowerCase();
+    const s = ctx.store.getState();
+    const g = buildGraph(s);
+    const node = g.nodes.find((n) => n.label.toLowerCase().includes(term));
+    if (!node) return { ok: true, summary: `No graph node matched "${term}".`, data: [] };
+    const impact = findImpact(g, node.id);
+    return {
+      ok: true,
+      summary: `Changing ${node.label} would affect ${impact.length} item(s).`,
+      data: impact.map((d) => ({ type: d.kind, label: d.label })),
+      evidence: [ev("project", node.id, node.label, `${impact.length} downstream dependencies`, "context", 0.8)],
+    };
+  },
+};
+
 /* --------------------------- registry -------------------------- */
 
 export const toolRegistry: Record<string, ToolDef> = {
@@ -286,6 +360,8 @@ export const toolRegistry: Record<string, ToolDef> = {
   createTask,
   createMissionStep,
   completeMissionStep,
+  traceDependency: traceDependencyTool,
+  findImpact: findImpactTool,
 };
 
 export function getTool(name: string): ToolDef | undefined {
