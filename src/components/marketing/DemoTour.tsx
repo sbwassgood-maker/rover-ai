@@ -14,15 +14,15 @@ import { cn } from "@/lib/utils";
 type Scene = { id: string; label: string; caption: string; duration: number };
 
 const scenes: Scene[] = [
-  { id: "intro", label: "Welcome", caption: "Everything your team knows, in one intelligent workspace.", duration: 4500 },
-  { id: "ask", label: "Ask Rover", caption: "Ask anything across your workspace and get answers with sources.", duration: 7000 },
-  { id: "search", label: "Search", caption: "One search across docs, projects, meetings and connected tools.", duration: 7000 },
-  { id: "docs", label: "Docs", caption: "Write with an AI partner that understands your context.", duration: 6500 },
-  { id: "databases", label: "Databases", caption: "Turn structured data into insight with one click.", duration: 6500 },
-  { id: "agents", label: "Agents", caption: "Turn recurring work into agents that run on their own.", duration: 6500 },
-  { id: "automations", label: "Automations", caption: "Compose triggers and actions into workflows that run themselves.", duration: 7000 },
-  { id: "meetings", label: "Meetings", caption: "Every meeting becomes searchable knowledge.", duration: 6500 },
-  { id: "control", label: "You're in control", caption: "AI does the work—you approve anything that touches the outside world.", duration: 6500 },
+  { id: "intro", label: "Welcome", caption: "Everything your team knows, in one intelligent workspace.", duration: 2600 },
+  { id: "ask", label: "Ask Rover", caption: "Ask anything across your workspace and get answers with sources.", duration: 4200 },
+  { id: "search", label: "Search", caption: "One search across docs, projects, meetings and connected tools.", duration: 4200 },
+  { id: "docs", label: "Docs", caption: "Write with an AI partner that understands your context.", duration: 3800 },
+  { id: "databases", label: "Databases", caption: "Turn structured data into insight with one click.", duration: 4000 },
+  { id: "agents", label: "Agents", caption: "Turn recurring work into agents that run on their own.", duration: 3600 },
+  { id: "automations", label: "Automations", caption: "Compose triggers and actions into workflows that run themselves.", duration: 4000 },
+  { id: "meetings", label: "Meetings", caption: "Every meeting becomes searchable knowledge.", duration: 3800 },
+  { id: "control", label: "You're in control", caption: "AI does the work—you approve anything that touches the outside world.", duration: 4000 },
 ];
 
 /**
@@ -317,11 +317,11 @@ function AskScene() {
           <span className="mt-0.5 flex h-6 w-6 items-center justify-center rounded-full bg-accent/10"><Sparkle size={13} /></span>
           <div className="min-w-0 flex-1 rounded-2xl rounded-tl-md border border-line bg-surface p-3 shadow-sm">
             <p className="text-[13.5px] text-ink">
-              <Typewriter text="I found 6 active blockers across Engineering and Product." speed={22} />
+              <Typewriter text="I found 6 active blockers across Engineering and Product." speed={10} />
             </p>
             <div className="mt-2.5 space-y-1.5">
               {[["API migration", "Fri"], ["Mobile onboarding", "Mon"], ["Billing integration", "Tue"]].map(([n, d], i) => (
-                <div key={n} className="flex items-center justify-between rounded-lg border border-line bg-canvas/60 px-2.5 py-1.5 text-[12.5px] animate-fade-up" style={{ animationDelay: `${900 + i * 220}ms` }}>
+                <div key={n} className="flex items-center justify-between rounded-lg border border-line bg-canvas/60 px-2.5 py-1.5 text-[12.5px] animate-fade-up" style={{ animationDelay: `${500 + i * 130}ms` }}>
                   <span className="flex items-center gap-1.5 font-medium text-ink"><FileText className="h-3.5 w-3.5 text-muted" /> {n}</span>
                   <span className="text-muted">Due {d}</span>
                 </div>
@@ -345,16 +345,16 @@ function SearchScene() {
         </div>
         <div className="mt-3 grid grid-cols-2 gap-2">
           {rows.map((r, i) => (
-            <div key={r} className="flex items-center gap-2 text-[12.5px] text-ink animate-fade-up" style={{ animationDelay: `${300 + i * 260}ms` }}>
+            <div key={r} className="flex items-center gap-2 text-[12.5px] text-ink animate-fade-up" style={{ animationDelay: `${150 + i * 130}ms` }}>
               <span className="flex h-4 w-4 items-center justify-center rounded-full bg-success text-white"><Check className="h-3 w-3" strokeWidth={3} /></span>
               {r}
             </div>
           ))}
         </div>
-        <div className="mt-3 rounded-xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] to-transparent p-3 animate-fade-up" style={{ animationDelay: "1500ms" }}>
+        <div className="mt-3 rounded-xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] to-transparent p-3 animate-fade-up" style={{ animationDelay: "800ms" }}>
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent"><Sparkle size={12} /> Answer</div>
           <p className="mt-1 text-[13px] text-ink">
-            <Typewriter text="The team chose three tiers, with Team at $20/user/month as the recommended plan." speed={18} start />
+            <Typewriter text="The team chose three tiers, with Team at $20/user/month as the recommended plan." speed={9} start />
           </p>
         </div>
       </div>
@@ -370,14 +370,14 @@ function DocsScene() {
           <div className="text-lg font-semibold tracking-tight text-ink">Q4 Product Strategy</div>
           <div className="mt-3 space-y-2 text-[12.5px] text-muted">
             <div className="font-semibold text-ink">Overview</div>
-            <p><Typewriter text="Our Q4 strategy focuses on improving activation, retention, and expansion." speed={16} /></p>
+            <p><Typewriter text="Our Q4 strategy focuses on improving activation, retention, and expansion." speed={9} /></p>
           </div>
         </div>
         <div className="rounded-xl border border-line bg-canvas/60 p-3">
           <div className="flex items-center gap-1.5"><Sparkle size={13} /><span className="text-[12px] font-semibold text-ink">Rover</span></div>
           <div className="mt-2 space-y-1.5">
             {["Create summary", "Turn into roadmap", "Extract tasks"].map((a, i) => (
-              <div key={a} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[12px] text-ink animate-fade-up" style={{ animationDelay: `${500 + i * 260}ms` }}>
+              <div key={a} className="flex items-center gap-1.5 rounded-lg border border-line bg-surface px-2.5 py-1.5 text-[12px] text-ink animate-fade-up" style={{ animationDelay: `${250 + i * 150}ms` }}>
                 <Sparkle size={11} /> {a}
               </div>
             ))}
@@ -399,7 +399,7 @@ function AgentsScene() {
     <Chrome icon={Bot} title="AI agents">
       <div className="mx-auto grid h-full max-w-lg grid-cols-2 content-center gap-2.5">
         {cards.map((c, i) => (
-          <div key={c.n} className="rounded-xl border border-line bg-surface p-3 shadow-sm animate-fade-up" style={{ animationDelay: `${i * 200}ms` }}>
+          <div key={c.n} className="rounded-xl border border-line bg-surface p-3 shadow-sm animate-fade-up" style={{ animationDelay: `${i * 110}ms` }}>
             <div className="flex items-center gap-1.5"><Sparkle size={13} /><span className="text-[12.5px] font-semibold text-ink">{c.n}</span></div>
             <div className="mt-2 inline-flex items-center gap-1.5 rounded-full border border-line bg-canvas px-2 py-0.5 text-[11px] font-medium text-ink">
               <span className={cn("h-1.5 w-1.5 rounded-full", c.s === "Working" ? "bg-warning animate-pulse-dot" : c.s === "Scheduled" ? "bg-accent" : "bg-success")} />
@@ -457,10 +457,10 @@ function DatabasesScene() {
             </tbody>
           </table>
         </div>
-        <div className="mt-3 rounded-xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] to-transparent p-3 animate-fade-up" style={{ animationDelay: "900ms" }}>
+        <div className="mt-3 rounded-xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] to-transparent p-3 animate-fade-up" style={{ animationDelay: "500ms" }}>
           <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wider text-accent"><Sparkle size={12} /> AI analysis</div>
           <p className="mt-1 text-[13px] text-ink">
-            <Typewriter text="3 projects are at risk. The CRM migration is highest priority—its dependency is blocking two teams." speed={16} start />
+            <Typewriter text="3 projects are at risk. The CRM migration is highest priority—its dependency is blocking two teams." speed={9} start />
           </p>
         </div>
       </div>
@@ -485,7 +485,7 @@ function AutomationsScene() {
                 "w-full rounded-xl border p-2.5 animate-fade-up",
                 s.ai ? "border-accent/20 bg-accent/[0.05]" : "border-line bg-surface"
               )}
-              style={{ animationDelay: `${i * 300}ms` }}
+              style={{ animationDelay: `${i * 170}ms` }}
             >
               <div className="flex items-center gap-2.5">
                 <span className={cn("flex h-7 w-7 items-center justify-center rounded-lg", s.ai ? "bg-accent/10" : "bg-ink/[0.04]")}>
@@ -516,12 +516,12 @@ function MeetingsScene() {
           </div>
           <div className="mt-3 text-[11px] font-semibold text-ink">Summary</div>
           <p className="mt-1 text-[12.5px] text-muted">
-            <Typewriter text="The team agreed to prioritize onboarding for Q4 and set the launch for April 14." speed={16} start />
+            <Typewriter text="The team agreed to prioritize onboarding for Q4 and set the launch for April 14." speed={9} start />
           </p>
           <div className="mt-3 text-[11px] font-semibold text-ink">Action items</div>
           <ul className="mt-1.5 space-y-1">
             {[["Sarah", "Draft onboarding proposal"], ["Alex", "Review analytics"], ["Mike", "Estimate effort"]].map(([who, what], i) => (
-              <li key={who} className="flex items-center gap-1.5 text-[12px] text-ink/80 animate-fade-up" style={{ animationDelay: `${700 + i * 220}ms` }}>
+              <li key={who} className="flex items-center gap-1.5 text-[12px] text-ink/80 animate-fade-up" style={{ animationDelay: `${350 + i * 140}ms` }}>
                 <span className="flex h-3.5 w-3.5 items-center justify-center rounded-[4px] border border-line" />
                 <span className="rounded bg-ink/[0.05] px-1.5 py-0.5 text-[11px] font-medium text-ink">{who}</span>
                 <span className="text-muted/50">→</span> {what}
@@ -537,7 +537,7 @@ function MeetingsScene() {
 function ControlScene() {
   const [decided, setDecided] = useState(false);
   useEffect(() => {
-    const t = setTimeout(() => setDecided(true), 2600);
+    const t = setTimeout(() => setDecided(true), 1500);
     return () => clearTimeout(t);
   }, []);
   const requests = [
