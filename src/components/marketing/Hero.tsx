@@ -1,11 +1,14 @@
 "use client";
+import { useState } from "react";
 import { Play } from "lucide-react";
 import { Container, Eyebrow, Reveal } from "@/components/ui/Section";
 import { ButtonLink, Button } from "@/components/ui/Button";
 import { BrowserFrame } from "@/components/ui/BrowserFrame";
 import { WorkspacePreview } from "./WorkspacePreview";
+import { DemoTour } from "./DemoTour";
 
 export function Hero() {
+  const [demoOpen, setDemoOpen] = useState(false);
   return (
     <section className="relative overflow-hidden pt-28 sm:pt-36">
       {/* Ambient backdrop */}
@@ -34,7 +37,7 @@ export function Hero() {
               <ButtonLink href="/onboarding" variant="primary" size="lg">
                 Start for free
               </ButtonLink>
-              <Button variant="secondary" size="lg">
+              <Button variant="secondary" size="lg" onClick={() => setDemoOpen(true)}>
                 <Play className="h-4 w-4" /> Watch demo
               </Button>
             </div>
@@ -54,6 +57,11 @@ export function Hero() {
           </BrowserFrame>
         </Reveal>
       </Container>
+
+      {/* Interactive product tour (opened by "Watch demo").
+          To use a real recorded video later, pass videoSrc="/demo.mp4"
+          or embedUrl="https://www.youtube.com/embed/…" to <DemoTour />. */}
+      <DemoTour open={demoOpen} onClose={() => setDemoOpen(false)} />
     </section>
   );
 }
