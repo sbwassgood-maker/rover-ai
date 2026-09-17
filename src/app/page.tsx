@@ -1,3 +1,4 @@
+import { DemoProvider } from "@/components/marketing/DemoProvider";
 import { Nav } from "@/components/marketing/Nav";
 import { Hero } from "@/components/marketing/Hero";
 import { SocialProof } from "@/components/marketing/SocialProof";
@@ -23,6 +24,7 @@ import { Footer } from "@/components/marketing/Footer";
 
 export default function HomePage() {
   return (
+    <DemoProvider>
     <main className="bg-canvas">
       <Nav />
       <Hero />
@@ -47,5 +49,6 @@ export default function HomePage() {
       <FinalCTA />
       <Footer />
     </main>
+    </DemoProvider>
   );
 }

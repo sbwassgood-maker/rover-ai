@@ -1,8 +1,12 @@
+"use client";
+import { Play } from "lucide-react";
 import { Container, Reveal } from "@/components/ui/Section";
 import { ButtonLink } from "@/components/ui/Button";
 import { RoverMark } from "@/components/brand/Logo";
+import { useDemo } from "./DemoProvider";
 
 export function FinalCTA() {
+  const { openDemo } = useDemo();
   return (
     <section className="px-5 pb-24 sm:px-6 lg:px-8">
       <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-night px-6 py-20 text-center sm:py-28">
@@ -32,6 +36,12 @@ export function FinalCTA() {
                 Talk to sales
               </ButtonLink>
             </div>
+            <button
+              onClick={openDemo}
+              className="mx-auto mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-night-muted transition-colors hover:text-white"
+            >
+              <Play className="h-4 w-4" /> Watch the 30-second demo
+            </button>
           </Reveal>
         </Container>
       </div>

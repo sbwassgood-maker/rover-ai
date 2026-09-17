@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, X } from "lucide-react";
 import { Logo } from "@/components/brand/Logo";
 import { Button, ButtonLink } from "@/components/ui/Button";
+import { useDemo } from "./DemoProvider";
 import { cn } from "@/lib/utils";
 
 const links = [
@@ -16,6 +17,7 @@ const links = [
 export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const { openDemo } = useDemo();
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -51,6 +53,9 @@ export function Nav() {
         </nav>
 
         <div className="hidden items-center gap-2 md:flex">
+          <Button variant="ghost" size="sm" onClick={openDemo}>
+            Watch demo
+          </Button>
           <ButtonLink href="/login" variant="ghost" size="sm">
             Log in
           </ButtonLink>
@@ -86,6 +91,12 @@ export function Nav() {
               {l.label}
             </Link>
           ))}
+          <button
+            onClick={() => { setOpen(false); openDemo(); }}
+            className="block w-full rounded-md px-3 py-2.5 text-left text-sm font-medium text-ink hover:bg-ink/5"
+          >
+            Watch demo
+          </button>
           <div className="grid grid-cols-2 gap-2 pt-2">
             <ButtonLink href="/login" variant="secondary" size="md">
               Log in
