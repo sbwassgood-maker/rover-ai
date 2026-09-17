@@ -40,7 +40,7 @@ export function FinalCTA() {
               onClick={openDemo}
               className="mx-auto mt-6 inline-flex items-center gap-2 text-[14px] font-medium text-night-muted transition-colors hover:text-white"
             >
-              <Play className="h-4 w-4" /> Watch the 30-second demo
+              <Play className="h-4 w-4" /> Watch the product tour
             </button>
           </Reveal>
         </Container>
