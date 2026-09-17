@@ -47,11 +47,11 @@ export function DemoTour({
   const [playing, setPlaying] = useState(true);
   const [progress, setProgress] = useState(0);
   const [finished, setFinished] = useState(false);
-  const [speed, setSpeed] = useState(1);
+  const [speed, setSpeed] = useState(1.5);
   const raf = useRef<number | null>(null);
   const startedAt = useRef<number>(0);
   const elapsedBefore = useRef<number>(0);
-  const speedRef = useRef(1);
+  const speedRef = useRef(1.5);
   const speeds = [1, 1.5, 2];
 
   const hasRealVideo = Boolean(videoSrc || embedUrl);
@@ -65,8 +65,8 @@ export function DemoTour({
       setProgress(0);
       setFinished(false);
       elapsedBefore.current = 0;
-      setSpeed(1);
-      speedRef.current = 1;
+      setSpeed(1.5);
+      speedRef.current = 1.5;
     }
   }, [open]);
 
