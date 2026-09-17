@@ -1,5 +1,6 @@
 import {
-  Home,
+  LayoutDashboard,
+  Rocket,
   Inbox,
   Sparkles,
   Search,
@@ -15,11 +16,12 @@ import {
 export type NavItem = { label: string; href: string; icon: LucideIcon; ai?: boolean };
 
 export const primaryNav: NavItem[] = [
-  { label: "Home", href: "/app", icon: Home },
-  { label: "Inbox", href: "/app/inbox", icon: Inbox },
+  { label: "Mission Control", href: "/app", icon: LayoutDashboard, ai: true },
+  { label: "Missions", href: "/app/missions", icon: Rocket },
   { label: "Ask Rover", href: "/app/ask", icon: Sparkles, ai: true },
   { label: "Search", href: "/app/search", icon: Search },
   { label: "Agents", href: "/app/agents", icon: Bot },
+  { label: "Inbox", href: "/app/inbox", icon: Inbox },
 ];
 
 export const workspaceNav: NavItem[] = [

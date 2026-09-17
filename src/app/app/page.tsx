@@ -1,177 +1,158 @@
 "use client";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { ArrowRight, Check, Sparkles, FileText, Clock } from "lucide-react";
+import { useMemo } from "react";
+import {
+  ArrowRight, AlertTriangle, Activity as ActivityIcon, Rocket, CheckCircle2, Clock,
+} from "lucide-react";
 import { Sparkle } from "@/components/brand/Sparkle";
 import { PageBody } from "@/components/app/PageHeader";
-import { docs, homeTasks, aiActivity, currentUser, projects, statusMeta } from "@/lib/mock-data";
-import { StatusDot } from "@/components/ui/Card";
+import { GoalLauncher } from "@/components/rover/GoalLauncher";
+import { MissionStatusBadge } from "@/components/rover/status";
+import { useRoverState } from "@/rover/useRover";
+import { currentUser } from "@/lib/mock-data";
+import { timeAgo } from "@/rover/format";
 
-export default function HomePage() {
-  const router = useRouter();
-  const [ask, setAsk] = useState("");
-  const [tasks, setTasks] = useState(homeTasks.map((t) => ({ ...t, done: false })));
+export default function MissionControl() {
+  const s = useRoverState();
 
-  const submit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (ask.trim()) router.push(`/app/ask?q=${encodeURIComponent(ask)}`);
-  };
+  const active = useMemo(
+    () => s.missions.filter((m) => !["COMPLETED", "CANCELLED"].includes(m.status)),
+    [s.missions]
+  );
+  const pendingApprovals = s.approvals.filter((a) => a.status === "pending");
+  const atRiskMissions = s.missions.filter((m) => m.riskLevel === "high" && m.status !== "COMPLETED");
+  const recentActivity = s.activity.slice(0, 6);
 
   return (
     <PageBody>
       <div className="mx-auto max-w-5xl">
-        <h1 className="text-2xl font-semibold tracking-tight text-ink">
-          Good morning, {currentUser.name}
-        </h1>
-        <p className="mt-1 text-[14.5px] text-muted">
-          Here&rsquo;s what&rsquo;s happening across your workspace.
-        </p>
-
-        {/* Ask */}
-        <form
-          onSubmit={submit}
-          className="mt-5 flex items-center gap-2.5 rounded-2xl border border-line bg-surface p-2.5 shadow-sm focus-within:border-accent/40 focus-within:ring-4 focus-within:ring-accent/10"
-        >
-          <Sparkle size={17} className="ml-1.5" />
-          <input
-            value={ask}
-            onChange={(e) => setAsk(e.target.value)}
-            placeholder="Ask Rover anything…"
-            className="flex-1 bg-transparent text-[14.5px] text-ink outline-none placeholder:text-muted/70"
-          />
-          <button className="rounded-xl bg-accent px-3.5 py-2 text-[13.5px] font-medium text-white hover:bg-accent-hover">
-            Ask
-          </button>
-        </form>
-
-        {/* AI Brief */}
-        <div className="mt-6 rounded-2xl border border-accent/20 bg-gradient-to-br from-accent/[0.06] to-accent-soft/[0.04] p-5">
-          <div className="flex items-center gap-2">
-            <Sparkle size={15} />
-            <span className="text-[14px] font-semibold text-ink">AI Brief</span>
+        {/* Command center */}
+        <div className="pt-2 text-center">
+          <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-line bg-surface px-3 py-1 text-[12px] font-medium text-muted">
+            <Sparkle size={13} /> Mission Control
           </div>
-          <div className="mt-3 grid gap-1.5 text-[14px] text-ink/80 sm:grid-cols-3">
-            <p>3 projects need attention.</p>
-            <p>7 new customer insights.</p>
-            <p>2 upcoming deadlines.</p>
-          </div>
-          <Link
-            href="/app/ask?q=What needs my attention?"
-            className="mt-3 inline-flex items-center gap-1 text-[13.5px] font-medium text-accent hover:gap-1.5 transition-all"
-          >
-            View briefing <ArrowRight className="h-3.5 w-3.5" />
-          </Link>
+          <h1 className="text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
+            Good morning, {currentUser.name}
+          </h1>
+          <p className="mx-auto mt-2 max-w-lg text-[15px] text-muted">
+            Give Rover an outcome. It plans the work, runs specialized agents through
+            real tools, verifies the result, and asks you when it matters.
+          </p>
         </div>
 
-        {/* Grid */}
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
-          {/* Continue working */}
-          <Card title="Continue working" href="/app/docs" cta="All docs">
+        <div className="mt-7">
+          <GoalLauncher />
+        </div>
+
+        {/* Attention strip */}
+        {(pendingApprovals.length > 0 || atRiskMissions.length > 0) && (
+          <div className="mt-8 grid gap-3 sm:grid-cols-2">
+            {pendingApprovals.length > 0 && (
+              <Link href={`/app/missions/${pendingApprovals[0].missionId ?? ""}`} className="flex items-center gap-3 rounded-xl border border-warning/30 bg-warning/[0.06] p-4 transition-colors hover:bg-warning/[0.1]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-warning/15"><Clock className="h-4.5 w-4.5 text-[#8a6600]" /></span>
+                <div className="flex-1">
+                  <div className="text-[13.5px] font-semibold text-ink">{pendingApprovals.length} approval{pendingApprovals.length > 1 ? "s" : ""} waiting</div>
+                  <div className="text-[12.5px] text-muted">Rover paused a high-risk action for your decision.</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted" />
+              </Link>
+            )}
+            {atRiskMissions.length > 0 && (
+              <Link href={`/app/missions/${atRiskMissions[0].id}`} className="flex items-center gap-3 rounded-xl border border-error/30 bg-error/[0.05] p-4 transition-colors hover:bg-error/[0.09]">
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-error/15"><AlertTriangle className="h-4.5 w-4.5 text-error" /></span>
+                <div className="flex-1">
+                  <div className="text-[13.5px] font-semibold text-ink">{atRiskMissions.length} mission{atRiskMissions.length > 1 ? "s" : ""} at risk</div>
+                  <div className="text-[12.5px] text-muted">{atRiskMissions[0].name}</div>
+                </div>
+                <ArrowRight className="h-4 w-4 text-muted" />
+              </Link>
+            )}
+          </div>
+        )}
+
+        {/* Active missions */}
+        <div className="mt-8">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="flex items-center gap-2 text-[14px] font-semibold text-ink"><Rocket className="h-4 w-4 text-accent" /> Active missions</h2>
+            <Link href="/app/missions" className="text-[12.5px] font-medium text-muted hover:text-ink">All missions</Link>
+          </div>
+
+          {active.length === 0 ? (
+            <div className="rounded-2xl border border-dashed border-line bg-surface/50 px-6 py-12 text-center">
+              <Sparkle size={20} className="mx-auto" />
+              <p className="mt-3 text-[14px] font-medium text-ink">No active missions yet</p>
+              <p className="mx-auto mt-1 max-w-sm text-[13px] text-muted">
+                Type an outcome above—like &ldquo;Launch our product&rdquo;—and Rover will turn it into a mission with a plan, agents, and verified work.
+              </p>
+            </div>
+          ) : (
+            <div className="grid gap-3 sm:grid-cols-2">
+              {active.map((m) => {
+                const doneSteps = m.plan.filter((p) => p.status === "done").length;
+                return (
+                  <Link key={m.id} href={`/app/missions/${m.id}`} className="group rounded-2xl border border-line bg-surface p-5 shadow-card transition-all hover:-translate-y-0.5 hover:border-accent/30">
+                    <div className="flex items-start justify-between gap-3">
+                      <h3 className="text-[15px] font-semibold text-ink">{m.name}</h3>
+                      <MissionStatusBadge status={m.status} />
+                    </div>
+                    <p className="mt-1.5 line-clamp-1 text-[13px] text-muted">{m.goal}</p>
+                    <div className="mt-4">
+                      <div className="mb-1 flex items-center justify-between text-[12px] text-muted">
+                        <span>{m.currentPhase}</span><span>{m.progress}%</span>
+                      </div>
+                      <div className="h-1.5 overflow-hidden rounded-full bg-ink/[0.06]">
+                        <div className="h-full rounded-full bg-accent transition-all duration-500" style={{ width: `${m.progress}%` }} />
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center gap-3 text-[12px] text-muted">
+                      <span>{doneSteps}/{m.plan.length} steps</span>
+                      <span>·</span>
+                      <span>{m.runIds.length} agent runs</span>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        {/* Activity + what Rover did */}
+        <div className="mt-8 grid gap-4 lg:grid-cols-2">
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+            <h2 className="mb-2 flex items-center gap-2 px-1 text-[14px] font-semibold text-ink"><ActivityIcon className="h-4 w-4 text-accent" /> Rover activity</h2>
             <div className="space-y-1">
-              {docs.slice(0, 4).map((d) => (
-                <Link
-                  key={d.id}
-                  href={`/app/docs/${d.id}`}
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-ink/[0.03]"
-                >
-                  <span className="flex h-8 w-8 items-center justify-center rounded-lg border border-line bg-canvas text-[13px] text-muted">
-                    {d.emoji}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate text-[13.5px] font-medium text-ink">{d.title}</span>
-                    <span className="block text-[12px] text-muted">Edited {d.updated}</span>
-                  </span>
-                </Link>
-              ))}
-            </div>
-          </Card>
-
-          {/* Your tasks */}
-          <Card title="Your tasks" href="/app/projects" cta="Projects">
-            <div className="space-y-0.5">
-              {tasks.map((t, i) => (
-                <button
-                  key={t.id}
-                  onClick={() => setTasks((prev) => prev.map((x, j) => (j === i ? { ...x, done: !x.done } : x)))}
-                  className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left hover:bg-ink/[0.03]"
-                >
-                  <span
-                    className={`flex h-4.5 w-4.5 shrink-0 items-center justify-center rounded-[5px] border transition-colors ${
-                      t.done ? "border-success bg-success text-white" : "border-line"
-                    }`}
-                  >
-                    {t.done && <Check className="h-3 w-3" strokeWidth={3} />}
-                  </span>
-                  <span className={`flex-1 text-[13.5px] ${t.done ? "text-muted line-through" : "text-ink"}`}>
-                    {t.title}
-                  </span>
-                  <span className="flex items-center gap-1 text-[12px] text-muted">
-                    <Clock className="h-3 w-3" /> {t.due}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </Card>
-
-          {/* AI activity */}
-          <Card title="AI activity" href="/app/agents" cta="Agents">
-            <div className="space-y-2">
-              {aiActivity.map((a) => (
-                <div key={a} className="flex items-center gap-2.5 text-[13.5px] text-ink/85">
-                  <span className="flex h-5 w-5 items-center justify-center rounded-full bg-success/12">
-                    <Check className="h-3 w-3 text-success" strokeWidth={3} />
-                  </span>
-                  {a}
+              {recentActivity.map((a) => (
+                <div key={a.id} className="flex items-center gap-2.5 rounded-lg px-2 py-2 text-[13px]">
+                  <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-accent/10"><Sparkle size={11} /></span>
+                  <span className="flex-1 text-ink/85">{a.action}</span>
+                  <span className="shrink-0 text-[11.5px] text-muted">{timeAgo(a.at)}</span>
                 </div>
               ))}
             </div>
-          </Card>
+          </div>
 
-          {/* Active projects */}
-          <Card title="Active projects" href="/app/projects" cta="All projects">
-            <div className="space-y-1">
-              {projects.slice(0, 4).map((p) => (
-                <Link
-                  key={p.id}
-                  href="/app/projects"
-                  className="flex items-center gap-3 rounded-lg px-2 py-2 hover:bg-ink/[0.03]"
-                >
-                  <StatusDot tone={statusMeta[p.status].tone} />
-                  <span className="min-w-0 flex-1 truncate text-[13.5px] font-medium text-ink">{p.name}</span>
-                  <span className="inline-flex items-center gap-1 text-[12px] text-accent">
-                    <Sparkle size={11} /> {p.insight}
-                  </span>
-                </Link>
-              ))}
+          <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+            <h2 className="mb-2 flex items-center gap-2 px-1 text-[14px] font-semibold text-ink"><CheckCircle2 className="h-4 w-4 text-success" /> What Rover produced</h2>
+            <div className="grid grid-cols-3 gap-2">
+              <Stat label="Missions" value={s.missions.length} />
+              <Stat label="Agent runs" value={s.runs.length} />
+              <Stat label="Tool calls" value={s.toolCalls.filter((c) => c.status === "ok").length} />
+              <Stat label="Docs" value={s.docs.filter((d) => d.createdByRun).length} />
+              <Stat label="Tasks" value={s.tasks.filter((t) => t.createdByRun).length} />
+              <Stat label="Evidence" value={s.evidence.length} />
             </div>
-          </Card>
+          </div>
         </div>
       </div>
     </PageBody>
   );
 }
 
-function Card({
-  title,
-  href,
-  cta,
-  children,
-}: {
-  title: string;
-  href: string;
-  cta: string;
-  children: React.ReactNode;
-}) {
+function Stat({ label, value }: { label: string; value: number }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
-      <div className="mb-2 flex items-center justify-between px-1">
-        <h2 className="text-[14px] font-semibold text-ink">{title}</h2>
-        <Link href={href} className="text-[12.5px] font-medium text-muted hover:text-ink">
-          {cta}
-        </Link>
-      </div>
-      {children}
+    <div className="rounded-xl border border-line bg-canvas/50 p-3 text-center">
+      <div className="text-xl font-semibold tabular-nums text-ink">{value}</div>
+      <div className="text-[11.5px] text-muted">{label}</div>
     </div>
   );
 }
