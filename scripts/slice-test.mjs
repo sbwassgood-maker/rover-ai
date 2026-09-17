@@ -81,5 +81,26 @@ import { applyAll } from "../.slice/rover/sandbox.js";
 const applied = applyAll(store, sbxMission.id);
 assert(applied > 0 && store.getState().docs.length > docsPre, `applying sandbox committed ${applied} change(s)`);
 
+// 8. Simulation: pure projection, no live mutation
+import { simulate, simulationTargets } from "../.slice/rover/simulate.js";
+const simTargets = simulationTargets(store.getState());
+const snapshotBefore = JSON.stringify(store.getState());
+const sim = simulate(store.getState(), { kind: "delay_deadline", targetId: simTargets[0]?.id, days: 14 });
+assert(sim.affected.length >= 0 && typeof sim.summary === "string", "simulation produced a projection");
+assert(JSON.stringify(store.getState()) === snapshotBefore, "simulation did NOT mutate live state");
+const cf = simulate(store.getState(), { kind: "do_nothing" });
+assert(cf.risks.length > 0, "counterfactual 'do nothing' surfaced risks");
+
+// 9. Watchers: evaluate raises alerts for blocked projects
+import { createWatcher, evaluateWatcher } from "../.slice/rover/watchers.js";
+const w = createWatcher(store, { name: "Risk watch", scopeKind: "workspace", scopeLabel: "Workspace", signals: ["blockers", "risk"], triggers: ["new_blocker", "risk_increases"], autoLaunch: false, enabled: true });
+const alerts = evaluateWatcher(store, w.id);
+assert(alerts.length > 0, `watcher raised ${alerts.length} alert(s) for at-risk projects`);
+
+// 10. Shadow Rover: detects patterns
+import { detectPatterns } from "../.slice/rover/shadow.js";
+const patterns = detectPatterns(store.getState());
+assert(patterns.length > 0, `shadow rover detected ${patterns.length} pattern(s)`);
+
 console.log("\nMission outcome:", m2.outcome);
-console.log(process.exitCode ? "\nSLICE TEST FAILED" : "\n✅ PHASES 4 & 5 VERIFIED END-TO-END");
+console.log(process.exitCode ? "\nSLICE TEST FAILED" : "\n✅ PHASES 6 & 7 VERIFIED END-TO-END");

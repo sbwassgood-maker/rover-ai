@@ -3,7 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Settings, PanelLeftClose, Plus } from "lucide-react";
 import { RoverMark } from "@/components/brand/Logo";
-import { primaryNav, roverNav, workspaceNav, teamNav, type NavItem } from "./nav-config";
+import { primaryNav, radarNav, roverNav, workspaceNav, teamNav, type NavItem } from "./nav-config";
 import { cn } from "@/lib/utils";
 
 function NavLink({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
@@ -61,6 +61,15 @@ export function SidebarContent({
 
       <nav className="mt-4 space-y-0.5">
         {primaryNav.map((n) => (
+          <NavLink key={n.href} item={n} onNavigate={onNavigate} />
+        ))}
+      </nav>
+
+      <div className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-wider text-muted/70">
+        Radar
+      </div>
+      <nav className="mt-1.5 space-y-0.5">
+        {radarNav.map((n) => (
           <NavLink key={n.href} item={n} onNavigate={onNavigate} />
         ))}
       </nav>

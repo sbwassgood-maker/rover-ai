@@ -126,5 +126,22 @@ export function seedState(): RoverState {
     ],
     decisions,
     sandbox: [],
+    watchers: [
+      {
+        id: "watch_seed_atlas",
+        workspaceId: WS,
+        name: "Website redesign",
+        scopeKind: "project",
+        scopeId: projects.find((p) => p.name === "Website redesign")?.id,
+        scopeLabel: "Website redesign",
+        signals: ["deadlines", "blockers", "velocity"],
+        triggers: ["risk_increases", "new_blocker"],
+        autoLaunch: false,
+        enabled: true,
+        alerts: [],
+        createdAt: ts,
+        updatedAt: ts,
+      },
+    ],
   };
 }

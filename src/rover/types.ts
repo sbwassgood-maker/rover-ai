@@ -345,6 +345,83 @@ export interface SandboxChange {
 }
 
 /* ------------------------------------------------------------------ */
+/* Simulation / What-if (transient — never mutates live data)          */
+/* ------------------------------------------------------------------ */
+
+export type SimulationKind =
+  | "delay_deadline"
+  | "cancel_project"
+  | "remove_feature"
+  | "add_capacity"
+  | "do_nothing";
+
+export interface SimulationChange {
+  type: string; // affected entity kind
+  id: ID;
+  label: string;
+  effect: string; // human-readable projected effect
+  severity: "info" | "warning" | "critical";
+}
+
+export interface Simulation {
+  id: ID;
+  kind: SimulationKind;
+  targetId?: ID;
+  targetLabel: string;
+  change: string; // e.g. "Launch date +14 days"
+  affected: SimulationChange[];
+  conflicts: string[];
+  risks: string[];
+  summary: string;
+  at: ISODate;
+}
+
+/* ------------------------------------------------------------------ */
+/* Watchers — persistent scope monitors                                */
+/* ------------------------------------------------------------------ */
+
+export type WatcherScopeKind = "mission" | "project" | "database" | "workspace";
+export type WatcherSignal = "deadlines" | "blockers" | "requirements" | "velocity" | "risk";
+export type WatcherTrigger = "risk_increases" | "deadline_changes" | "new_blocker" | "requirement_conflict";
+
+export interface WatcherAlert {
+  id: ID;
+  message: string;
+  severity: "info" | "warning" | "critical";
+  at: ISODate;
+  acknowledged: boolean;
+  launchedMissionId?: ID;
+}
+
+export interface Watcher extends Entity {
+  name: string;
+  scopeKind: WatcherScopeKind;
+  scopeId?: ID;
+  scopeLabel: string;
+  signals: WatcherSignal[];
+  triggers: WatcherTrigger[];
+  /** if true, a triggered watcher auto-launches a mission */
+  autoLaunch: boolean;
+  enabled: boolean;
+  lastChecked?: ISODate;
+  alerts: WatcherAlert[];
+}
+
+/* ------------------------------------------------------------------ */
+/* Shadow Rover — observed patterns -> suggestions                     */
+/* ------------------------------------------------------------------ */
+
+export interface ShadowSuggestion {
+  id: ID;
+  title: string;
+  observation: string;
+  suggestion: string;
+  kind: "automation" | "agent" | "template";
+  confidence: number; // 0..1
+  goal: string; // the goal to launch if converted
+}
+
+/* ------------------------------------------------------------------ */
 /* Store shape                                                         */
 /* ------------------------------------------------------------------ */
 
@@ -367,6 +444,7 @@ export interface RoverState {
   activity: Activity[];
   decisions: Decision[];
   sandbox: SandboxChange[];
+  watchers: Watcher[];
 }
 
 export type CollectionName = keyof Omit<RoverState, "workspace">;

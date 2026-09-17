@@ -14,6 +14,9 @@ import {
   GitBranch,
   ShieldCheck,
   ScrollText,
+  Radar,
+  FlaskConical,
+  Eye,
   type LucideIcon,
 } from "lucide-react";
 
@@ -27,6 +30,13 @@ export const primaryNav: NavItem[] = [
   { label: "Agents", href: "/app/agents", icon: Bot },
   { label: "Approvals", href: "/app/approvals", icon: ShieldCheck },
   { label: "Inbox", href: "/app/inbox", icon: Inbox },
+];
+
+// Radar — proactive / predictive surfaces
+export const radarNav: NavItem[] = [
+  { label: "Simulate", href: "/app/simulate", icon: FlaskConical, ai: true },
+  { label: "Watchers", href: "/app/watchers", icon: Radar },
+  { label: "Shadow Rover", href: "/app/shadow", icon: Eye, ai: true },
 ];
 
 // Rover intelligence & governance surfaces
